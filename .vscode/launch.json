@@ -1,0 +1,39 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Evaluate",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/srunner/challenge/challenge_evaluator_routes.py",
+            "args": [
+                "--scenario=${workspaceFolder}/srunner/challenge/all_towns_traffic_scenarios1_3_4.json",
+                "--routes=${workspaceFolder}/srunner/challenge/routes_training.xml",
+                "--debug=0",
+                "--agent=/home/zhong/Downloads/scenario_runner-carla_challenge/srunner/challenge/autoagents/Track4SampleAgent.py",
+                "--config=''"
+            ],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "ROOT_SCENARIO_RUNNER": "${workspaceFolder}",
+                "CARLA_ROOT": "/media/zhong/F8787D6E787D2D0E/CARLA/CARLA_Latest",
+                "CARLA_SERVER": "/media/zhong/F8787D6E787D2D0E/CARLA/CARLA_Latest/CarlaUE4.sh"
+            }
+        },
+        {
+            "name": "Python: Current File",
+            "type": "python",
+            "request": "launch",
+            "program": "/home/zhong/Downloads/scenario_runner-carla_challenge/scenario_runner.py",
+            "args": [
+                "--scenario",
+                "FollowLeadingVehicle"
+            ],
+            "console": "integratedTerminal"
+        }
+    ]
+}
