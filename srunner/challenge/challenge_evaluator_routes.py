@@ -29,13 +29,19 @@ import traceback
 import xml.etree.ElementTree as ET
 import time
 
-sys.path.append("/media/zhong/F8787D6E787D2D0E/CARLA/CARLA_Latest/PythonAPI")
-sys.path.append("/media/zhong/F8787D6E787D2D0E/CARLA/CARLA_Latest/PythonAPI/carla/dist/carla-0.9.5-py3.5-linux-x86_64.egg")
-sys.path.append("/media/zhong/F8787D6E787D2D0E/CARLA/CARLA_Latest/PythonAPI/carla")
-# sys.path.append("/home/zhong/Downloads/CARLA_0.9.4")
-# sys.path.append("/home/zhong/Downloads/CARLA_0.9.4/PythonAPI/carla-0.9.4-py3.5-linux-x86_64.egg")
-# sys.path.append("/home/zhong/Downloads/CARLA_0.9.4/PythonAPI")
-sys.path.append("/home/zhong/Downloads/scenario_runner-carla_challenge")
+sys.path.append('/home/carla/Carla/binary_latest/PythonAPI/carla')
+sys.path.append('/home/carla/Carla/binary_latest/PythonAPI/carla/dist/carla-0.9.5-py3.5-linux-x86_64.egg')
+sys.path.append('/home/carla/Carla/binary_latest/PythonAPI')
+sys.path.append('/home/carla/Carla/scenario_runner')
+
+
+# sys.path.append("/media/zhong/F8787D6E787D2D0E/CARLA/CARLA_Latest/PythonAPI")
+# sys.path.append("/media/zhong/F8787D6E787D2D0E/CARLA/CARLA_Latest/PythonAPI/carla/dist/carla-0.9.5-py3.5-linux-x86_64.egg")
+# sys.path.append("/media/zhong/F8787D6E787D2D0E/CARLA/CARLA_Latest/PythonAPI/carla")
+# # sys.path.append("/home/zhong/Downloads/CARLA_0.9.4")
+# # sys.path.append("/home/zhong/Downloads/CARLA_0.9.4/PythonAPI/carla-0.9.4-py3.5-linux-x86_64.egg")
+# # sys.path.append("/home/zhong/Downloads/CARLA_0.9.4/PythonAPI")
+# sys.path.append("/home/zhong/Downloads/scenario_runner-carla_challenge")
 
 import py_trees
 
@@ -319,10 +325,9 @@ class ChallengeEvaluator(object):
             self.ego_vehicle = CarlaActorPool.request_new_actor('vehicle.lincoln.mkz2017', start_transform, hero=True)
         else:
             self.ego_vehicle.set_transform(start_transform)
-
         # setup sensors
-        if self.agent_instance is not None:
-            self.setup_sensors(self.agent_instance.sensors(), self.ego_vehicle)
+        # if self.agent_instance is not None:
+        #     self.setup_sensors(self.agent_instance.sensors(), self.ego_vehicle)
 
     def draw_waypoints(self, waypoints, turn_positions_and_labels, vertical_shift, persistency=-1):
         """
@@ -635,7 +640,7 @@ class ChallengeEvaluator(object):
 
             # ego vehicle acts
             self.ego_vehicle.apply_control(ego_action)
-            if self.debug:
+            if True: #self.debug:
                 spectator = self.world.get_spectator()
                 ego_trans = self.ego_vehicle.get_transform()
                 spectator.set_transform(carla.Transform(ego_trans.location + carla.Location(z=50),
@@ -707,7 +712,7 @@ class ChallengeEvaluator(object):
         return_message = error_message
         return_message += "\n=================================="
 
-
+        raise RuntimeError(error_message)
         current_statistics = {'id': -1,
                               'score_composed': score_composed,
                               'score_route': score_route,
@@ -1037,11 +1042,11 @@ class ChallengeEvaluator(object):
         self.world = client.get_world()
         self.timestamp = self.world.wait_for_tick()
         
-        # settings = self.world.get_settings()
-        # settings.synchronous_mode = True
+        settings = self.world.get_settings()
+        settings.synchronous_mode = True
         # if self.track == 4:
         #     settings.no_rendering_mode = True
-        # self.world.apply_settings(settings)
+        self.world.apply_settings(settings)
         # update traffic lights to make traffic more dynamic
         traffic_lights = self.world.get_actors().filter('*traffic_light*')
         for tl in traffic_lights:
@@ -1115,7 +1120,6 @@ class ChallengeEvaluator(object):
                                                                              world_annotations)
         
         CarlaDataProvider.set_ego_vehicle_route(convert_transform_to_location(_route_description['trajectory']))
-        
         # Sample the scenarios to be used for this route instance.
         sampled_scenarios_definitions = self.scenario_sampling(potential_scenarios_definitions)
 
@@ -1128,28 +1132,21 @@ class ChallengeEvaluator(object):
             self.record_fatal_error(error_message)
             self._system_error = True
             sys.exit(-1)
-        
         self.agent_instance.set_global_plan(gps_route, _route_description['trajectory'])
         # prepare the ego car to run the route.
         # It starts on the first wp of the route
-
         elevate_transform = _route_description['trajectory'][0][0]
         elevate_transform.location.z += 0.5
         self.prepare_ego_car(elevate_transform)
-        print("add vehicle")
-        while True:
-            time.sleep(0.5)
         # build the master scenario based on the route and the target.
         self.master_scenario = self.build_master_scenario(_route_description['trajectory'],
                                                           _route_description['town_name'],
                                                           timeout=route_timeout)
-
         self.background_scenario = self.build_background_scenario(_route_description['town_name'],
                                                                   timeout=route_timeout)
 
         self.traffic_light_scenario = self.build_trafficlight_scenario(_route_description['town_name'],
                                                                   timeout=route_timeout)
-
         self.list_scenarios = [self.master_scenario, self.background_scenario, self.traffic_light_scenario]
         # build the instance based on the parsed definitions.
         if self.debug > 0:
@@ -1176,6 +1173,10 @@ class ChallengeEvaluator(object):
 
         # main loop!
         self.run_route(_route_description['trajectory'])
+
+        print("sceneario ends")
+        # while True:
+        #     time.sleep(0.5)
 
     def run(self, args):
         """
@@ -1212,22 +1213,17 @@ class ChallengeEvaluator(object):
 
                 # For debugging
                 self.route_visible = self.debug > 0
-
-
-
+                
                 #### Only Town01 here
-                if not route_description['town_name'] == 'Town01':
+                if not route_description['town_name'] == 'Town03':
                     continue
-
-
-
+                
                 # Try to load the world and start recording
                 # If not successful stop recording and continue with next iteration
                 try:
                     # load the self.world variable to be used during the route
                     print(route_description['town_name'])
                     self.load_world(client, route_description['town_name'])
-                    
                     # set weather profile
                     self.set_weather_profile(repetition)
                     # Set the actor pool so the scenarios can prepare themselves when needed
@@ -1254,6 +1250,7 @@ class ChallengeEvaluator(object):
                     self.load_environment_and_run(args, world_annotations, route_description)
                     
                 except Exception as e:
+                    traceback.print_exc()
                     sys.exit(-1)
                     if self.debug > 0:
                         traceback.print_exc()
@@ -1321,9 +1318,9 @@ if __name__ == '__main__':
 
     # CARLA_ROOT = os.environ.get('CARLA_ROOT')
     # CARLA_ROOT = '/home/zhong/Downloads/CARLA_0.9.4'
-    CARLA_ROOT ='/media/zhong/F8787D6E787D2D0E/CARLA/CARLA_Latest'
+    CARLA_ROOT = '/home/carla/Carla/binary_latest'
     #ROOT_SCENARIO_RUNNER = os.environ.get('ROOT_SCENARIO_RUNNER')
-    ROOT_SCENARIO_RUNNER='/home/zhong/Downloads/scenario_runner-carla_challenge'
+    ROOT_SCENARIO_RUNNER = '/home/carla/Carla/scenario_runner_cz/carla-challenge-route'
 
 
     if not CARLA_ROOT:

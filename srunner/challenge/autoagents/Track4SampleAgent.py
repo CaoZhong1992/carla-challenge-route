@@ -194,6 +194,7 @@ class Track4SampleAgent(AutonomousAgent):
         return sensors
 
     def run_step(self, input_data, timestamp):
+        print(input_data)
         self.agent_engaged = True
         return self.current_control
 

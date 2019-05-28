@@ -7,7 +7,7 @@ from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 
 from srunner.challenge.autoagents.autonomous_agent import AutonomousAgent, Track
 
-class NPCAgent(AutonomousAgent):
+class CARLAOKAgent(AutonomousAgent):
     def setup(self, path_to_conf_file):
         self.track = Track.ALL_SENSORS_HDMAP_WAYPOINTS
 
@@ -54,7 +54,8 @@ class NPCAgent(AutonomousAgent):
                     hero_actor = actor
                     break
             if hero_actor:
-                self._agent = BasicAgent(hero_actor)
+                # self._agent = BasicAgent(hero_actor)
+                self._agent = LocalPlanner(hero_actor)
 
             return control
 
@@ -66,11 +67,12 @@ class NPCAgent(AutonomousAgent):
                     wp = CarlaDataProvider.get_map().get_waypoint(transform.location)
                     plan.append((wp, road_option))
 
-                self._agent._local_planner.set_global_plan(plan)
+                # self._agent._local_planner.set_global_plan(plan)
+                self._agent.set_global_plan(plan)
                 self.route_assigned = True
 
         else:
-            # print("[Timestamp: {}]".format(timestamp))
+            print("[Timestamp: {}]".format(timestamp))
             control = self._agent.run_step()
 
         return control

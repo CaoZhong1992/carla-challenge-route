@@ -1,13 +1,13 @@
 {
-    "stderr": "",
     "submission_status": "FINISHED",
+    "stderr": "",
     "result": [
         {
-            "split": "dev_split",
             "show_to_participant": true,
+            "split": "dev_split",
             "accuracies": {
-                "avg. route points": 0.0,
                 "total avg.": 0.0,
+                "avg. route points": 0.0,
                 "infraction points": 0.0
             }
         }
