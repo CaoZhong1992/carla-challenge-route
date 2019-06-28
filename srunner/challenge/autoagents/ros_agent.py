@@ -96,6 +96,9 @@ class RosAgent(AutonomousAgent):
         self.waypoint_publisher = rospy.Publisher(
             '/carla/ego_vehicle/waypoints', Path, queue_size=1, latch=True)
 
+        self.origin_point_publisher = rospy.Publisher(
+            '/carla/ego_vehicle/origin_point', NavSatFix, queue_size=1)
+
         self.publisher_map = {}
         self.id_to_sensor_type_map = {}
         self.id_to_camera_info_map = {}
@@ -126,6 +129,8 @@ class RosAgent(AutonomousAgent):
                     self.map_file_publisher = rospy.Publisher('/carla/map_file', String, queue_size=1, latch=True)
                 if not self.tf_broadcaster:
                     self.tf_broadcaster = tf.TransformBroadcaster()
+            elif sensor['type'] == 'sensor.object_finder':
+                pass
             else:
                 raise TypeError("Invalid sensor type: {}".format(sensor['type']))
 
@@ -199,6 +204,26 @@ class RosAgent(AutonomousAgent):
 
         rospy.loginfo("Publishing Plan...")
         self.waypoint_publisher.publish(msg)
+
+    def publish_origin_point(self):
+        """
+        Function to publish origin point
+        """
+        # self.origin_point_publisher = rospy.Publisher(
+        #     '/carla/ego_vehicle/origin_point', NavSatFix, queue_size=1)
+
+        lon_0,lat_0 = calibrate_lonlat0(self._global_plan,self._global_plan_world_coord)
+        msg = NavSatFix()
+        msg.header = self.get_header()
+        msg.header.frame_id = 'gps'
+        msg.latitude = lat_0
+        msg.longitude = lon_0
+        msg.altitude = 0.0
+        msg.status.status = NavSatStatus.STATUS_SBAS_FIX
+        msg.status.service = NavSatStatus.SERVICE_GPS | NavSatStatus.SERVICE_GLONASS | NavSatStatus.SERVICE_COMPASS | NavSatStatus.SERVICE_GALILEO
+        
+        self.origin_point_publisher.publish(msg)
+
 
     def sensors(self):
         """
@@ -344,7 +369,7 @@ class RosAgent(AutonomousAgent):
                 self.map_publisher.publish(map_info)
         if self.map_file_publisher:
             self.map_file_publisher.publish(data['map_file'])
-            
+
     def run_step(self, input_data, timestamp):
         self.timestamp = timestamp
         self.clock_publisher.publish(Clock(rospy.Time.from_sec(timestamp)))
@@ -357,6 +382,7 @@ class RosAgent(AutonomousAgent):
         if self._global_plan_world_coord and not self.global_plan_published:
             self.global_plan_published = True
             self.publish_plan()
+            self.publish_origin_point()
 
         #publish data of all sensors
         for key, val in input_data.items():
@@ -371,6 +397,8 @@ class RosAgent(AutonomousAgent):
                 self.publish_can(key, val[1])
             elif sensor_type == 'sensor.hd_map':
                 self.publish_hd_map(key, val[1])
+            elif sensor_type == 'sensor.object_finder':
+                pass
             else:
                 raise TypeError("Invalid sensor type: {}".format(sensor['type']))
 
@@ -379,3 +407,50 @@ class RosAgent(AutonomousAgent):
         #self.vehicle_control_event.wait()
         #self.vehicle_control_event.clear()
         return self.current_control
+
+
+def calibrate_lonlat0(route_gps,route_world_coordinate):
+
+    if route_gps is None or len(route_gps) != len(route_world_coordinate):
+        return None
+
+    if len(route_world_coordinate) > 101:
+        end_id = 100
+    else:
+        end_id = len(route_world_coordinate)-2
+    
+    if end_id < 1:
+        return None
+
+    gps_1 = route_gps[0][0]
+    gps_2 = route_gps[end_id][0]
+
+    lon1 = gps_1.get('lon')
+    lat1 = gps_1.get('lat')
+
+    lon2 = gps_2.get('lon')
+    lat2 = gps_2.get('lat')
+
+    world_coordinate_1 = route_world_coordinate[0][0]
+    world_coordinate_2 = route_world_coordinate[end_id][0]
+
+    x1 = world_coordinate_1.location.x
+    y1 = world_coordinate_1.location.y
+    x2 = world_coordinate_2.location.x
+    y2 = world_coordinate_2.location.y 
+
+    EARTH_RADIUS_EQUA = 6378137.0
+
+    tx1 = math.radians(lon1)*EARTH_RADIUS_EQUA
+    ty1 = EARTH_RADIUS_EQUA* math.log(math.tan((90+lat1)*math.pi/360))
+
+    tx2 = math.radians(lon2)*EARTH_RADIUS_EQUA
+    ty2 = EARTH_RADIUS_EQUA* math.log(math.tan((90+lat2)*math.pi/360))
+
+    tx0 = (x2*tx1-x1*tx2)/(x2-x1)
+    ty0 = (y2*ty1-y1*ty2)/(y2-y1)
+
+    lon_0 = tx0/EARTH_RADIUS_EQUA/math.pi*180
+    lat_0 = math.atan(math.exp(ty0/EARTH_RADIUS_EQUA))/math.pi*360-90
+
+    return lon_0,lat_0

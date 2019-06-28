@@ -435,7 +435,6 @@ class OnSidewalkTest(Criterion):
         Check lane invasion count
         """
         new_status = py_trees.common.Status.RUNNING
-
         if self._terminate_on_failure and (self.test_status == "FAILURE"):
             new_status = py_trees.common.Status.FAILURE
 
@@ -616,8 +615,9 @@ class InRouteTest(Criterion):
     """
     The test is a success if the actor is never outside route
     """
-    DISTANCE_THRESHOLD = 10.0 # meters
-    WINDOWS_SIZE = 2
+    DISTANCE_THRESHOLD = 1500000000.0 #10.0 # meters
+
+    WINDOWS_SIZE = 10 ##2
 
     def __init__(self, actor, radius, route, offroad_max, name="InRouteTest", terminate_on_failure=False):
         """
@@ -637,12 +637,16 @@ class InRouteTest(Criterion):
         Check if the actor location is within trigger region
         """
         new_status = py_trees.common.Status.RUNNING
-
+            
         location = CarlaDataProvider.get_location(self._actor)
         if location is None:
             return new_status
 
         if self._terminate_on_failure and (self.test_status == "FAILURE"):
+            print("-----------check1---------------")
+            print(self._terminate_on_failure,self.test_status)
+            while True:
+                pass
             new_status = py_trees.common.Status.FAILURE
 
         elif self.test_status == "RUNNING" or self.test_status == "INIT":
@@ -669,6 +673,10 @@ class InRouteTest(Criterion):
                 self.list_traffic_events.append(route_deviation_event)
 
                 self.test_status = "FAILURE"
+                print("-----------check2---------------")
+                print(distance, shortest_distance, self._current_index)
+                while True:
+                    pass
                 new_status = py_trees.common.Status.FAILURE
 
         self.logger.debug("%s.update()[%s->%s]" % (self.__class__.__name__, self.status, new_status))

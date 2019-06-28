@@ -259,7 +259,7 @@ class ChallengeEvaluator(object):
         self.timestamp = None
 
         # debugging parameters
-        self.route_visible = self.debug > 0
+        self.route_visible = 0#self.debug > 0
 
         # set up atexit methods to prevent blocking the server
         atexit.register(self.__del__)
@@ -326,8 +326,8 @@ class ChallengeEvaluator(object):
         else:
             self.ego_vehicle.set_transform(start_transform)
         # setup sensors
-        # if self.agent_instance is not None:
-        #     self.setup_sensors(self.agent_instance.sensors(), self.ego_vehicle)
+        if self.agent_instance is not None:
+            self.setup_sensors(self.agent_instance.sensors(), self.ego_vehicle)
 
     def draw_waypoints(self, waypoints, turn_positions_and_labels, vertical_shift, persistency=-1):
         """
@@ -637,7 +637,6 @@ class ChallengeEvaluator(object):
                     for actor in self.world.get_actors():
                         if 'vehicle' in actor.type_id or 'walker' in actor.type_id:
                             print(actor.get_transform())
-
             # ego vehicle acts
             self.ego_vehicle.apply_control(ego_action)
             if True: #self.debug:
@@ -645,6 +644,9 @@ class ChallengeEvaluator(object):
                 ego_trans = self.ego_vehicle.get_transform()
                 spectator.set_transform(carla.Transform(ego_trans.location + carla.Location(z=50),
                                                         carla.Rotation(pitch=-90)))
+                # r = carla.Rotation(pitch = ego_trans.rotation.pitch-20, yaw = ego_trans.rotation.yaw, roll = ego_trans.rotation.roll)
+                # spectator.set_transform(carla.Transform(ego_trans.location + carla.Location(z=ego_trans.location.z+3),
+                #                                         r))
 
                 # show current score
                 total_score, route_score, infractions_score = self.compute_current_statistics()
@@ -653,7 +655,6 @@ class ChallengeEvaluator(object):
                                              "[{:.2f}/{:.2f}]".format(route_score, infractions_score),
                                              draw_shadow=False, color=carla.Color(255, 255, 255),
                                              life_time=0.01)
-
 
             if self.route_visible:
                 turn_positions_and_labels = clean_route(trajectory)
@@ -664,7 +665,6 @@ class ChallengeEvaluator(object):
             # time continues
             self.world.tick()
             self.timestamp = self.world.wait_for_tick()
-
             # check for scenario termination
             for i, _ in enumerate(self.list_scenarios):
 
@@ -691,7 +691,6 @@ class ChallengeEvaluator(object):
                     self.list_scenarios[i].remove_all_actors()
                     self.list_scenarios[i] = None
             self.list_scenarios[:] = [scenario for scenario in self.list_scenarios if scenario]
-
 
         # Route finished set for the background scenario to also finish
         blackboard = py_trees.blackboard.Blackboard()
@@ -1212,7 +1211,7 @@ class ChallengeEvaluator(object):
                     sys.exit(-1)
 
                 # For debugging
-                self.route_visible = self.debug > 0
+                self.route_visible = 0 #self.debug > 0
                 
                 #### Only Town01 here
                 if not route_description['town_name'] == 'Town03':
